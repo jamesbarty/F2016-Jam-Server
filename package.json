@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/jamesbarty/F2016-Jam-Server/issues"
   },
-  "homepage": "https://github.com/jamesbarty/F2016-Jam-Server#readme"
+  "homepage": "https://github.com/jamesbarty/F2016-Jam-Server#readme",
+  "dependencies": {
+    "socket.io": "^1.5.1"
+  }
 }
