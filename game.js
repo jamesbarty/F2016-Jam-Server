@@ -323,8 +323,8 @@ Game.prototype.toggleDoorsOfColor = function(color, gameNum) {
           this.broadcastToGame(gameNum, 'playerKilled', playerData);
           // Reset player to their spawn point
           player.coords = {
-            x: spawn.x,
-            y: spawn.y
+            x: spawnCoords.x,
+            y: spawnCoords.y
           };
           // Player can't move for a bit
           player.moving = true;
