@@ -1,11 +1,12 @@
-function Door(color, orientation) {
+function Door(color, state, coords/*, orientation*/) {
   this.color = color;
-  this.orientation = orientation;
-  this.open = false;
+  //this.orientation = orientation;
+  this.open = state;
+  this.coords = coords;
 }
 
 Door.prototype.isBlocking = function() {
-  return this.open;
+  return !this.open;
 };
 
 Door.prototype.open = function() {
@@ -17,7 +18,7 @@ Door.prototype.close = function() {
 };
 
 Door.prototype.toggle = function() {
-  this.open - !this.open;
+  this.open = !this.open;
 };
 
 module.exports = Door;

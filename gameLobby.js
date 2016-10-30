@@ -21,9 +21,23 @@ GameLobby.prototype.setupOwner = function(player) {
   player.startGame = function() {
     // Can start if I have two players on each team
     if (this.teamOne.length == this.maxPlayers / 2 && this.teamTwo.length == this.maxPlayers / 2) {
+        //Give starting positions to the players
+        var playerTemp = this.teamOne[0];
+        playerTemp.coords = {x: 20, y: 1};
+        this.teamOne[0] = playerTemp;
+        var playerTemp = this.teamOne[1];
+        playerTemp.coords = {x: 20, y: 1};
+        this.teamOne[1] = playerTemp;
+        var playerTemp = this.teamTwo[0];
+        playerTemp.coords = {x: 20, y: 38};
+        this.teamTwo[0] = playerTemp;
+        var playerTemp = this.teamTwo[1];
+        playerTemp.coords = {x: 20, y: 38};
+        this.teamTwo[1] = playerTemp;
+        
       var players = {
-        players: this.players,
-        teams: [this.teamOne, this.teamTwo],
+        players: this.players.slice(),
+        teams: [this.teamOne.slice(), this.teamTwo.slice()],
         games: [[this.teamOne[0], this.teamTwo[0]], [this.teamOne[1], this.teamTwo[1]]]
       }
       

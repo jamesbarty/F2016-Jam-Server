@@ -1,8 +1,9 @@
 var fps = 20;
 var frameRate = 1000 / fps;
-var moveDuration = 1000;
+var moveDuration = 200;
 var numGames = 2;
 var numTeams = 2;
+var gameEndDelay = 3000;
 var Map = require('./map.js');
 
 function moveArraySlot(array, old_index, new_index) {
@@ -21,25 +22,25 @@ function moveArraySlot(array, old_index, new_index) {
 
 function getDestCoords(coords, direction) {
   switch (direction) {
-    case "w":
+    case 'w':
       return {
         x: coords.x,
         y: coords.y - 1
       };
       break;
-    case "a":
+    case 'a':
       return {
         x: coords.x - 1,
         y: coords.y
       };
       break;
-    case "s":
+    case 's':
       return {
         x: coords.x,
         y: coords.y + 1
       };
       break;
-    case "d":
+    case 'd':
       return {
         x: coords.x + 1,
         y: coords.y
@@ -66,12 +67,13 @@ function Game(lobby, players) {
 
   // Send data to clients
   for (var i = 0; i < this.games.length; i++) {
-    var gameData = {
-      mapData: this.maps[i].blueprint,
-      playerData: []
-    }
+
     // For each player in the game
     for (var j = 0; j < this.games[i].length; j++) {
+    var gameData = {
+    mapData: this.maps[i].blueprint,
+    playerData: []
+    }
       // Get player data for each player in the game
       for (var k = 0; k < this.games[i].length; k++) {
         var playerData = {
@@ -88,6 +90,7 @@ function Game(lobby, players) {
       }
       var curPlayer = this.games[i][j];
       console.log("Emmitting init data to player", curPlayer.id);
+      //console.log(gameData["playerData"]);
       curPlayer.socket.emit("initGame", gameData);
     }
   }
@@ -127,43 +130,91 @@ Game.prototype.initPlayer = function(player, gameNum) {
   player.directions = ['w','a','s','d'];
   player.directionToMove = "";
   player.moving = false;
-  player.coords = {x: 0, y: 0};
+  //player.coords = {x: 0, y: 0};
 
   // Setup key listeners
   player.keydown = function(key) {
+    //console.log("before  down");
+      console.log(player.keys);
+    if (key["key"] === 119)
+    {
+        key = 'w';       
+    }
+    else if (key["key"] === 115)
+    {
+        key = 's'
+    }
+    else if (key["key"] === 100)
+    {
+        key = 'd'
+    }
+    else if (key["key"] === 97)
+    {
+        key = 'a'
+    }
+    //console.log(key);
     player.keys[key] = 1;
+      //console.log("set ", key, "to 1");
 
     // I want to move in this direction next
-    var index = players.directions.indexOf(e.key);
-    moveArraySlot(directions, index, 0);
+    var index = player.directions.indexOf(key);
+    moveArraySlot(player.directions, index, 0);
     player.directionToMove = key;
+      
+     // console.log("after  down");
+      console.log(player.keys);
 
     // Try to move
     this.movePlayer(player, gameNum);
-  };
+  }.bind(this);
   player.socket.on('keydown', player.keydown);
 
   player.keyup = function(key) {
-    player.keys[key] = 0;
+      //console.log("before  up");
+      console.log(player.keys);
+      //console.log("Up on key ", key["key"])
+    
+    if (key["key"] === 119)
+    {
+        player.keys["w"] = 0;       
+    }
+    else if (key["key"] === 115)
+    {
+        player.keys["s"] = 0;
+    }
+    else if (key["key"] === 100)
+    {
+        player.keys["d"] = 0;
+        console.log("zeroed d");
+    }
+    else if (key["key"] === 97)
+    {
+        player.keys["a"] = 0;
+    }
 
+    //console.log("after down");
+     // console.log(player.keys);
     // Determine the direction I want to be moving in
     var found = false;
     for (var i = 0; i < player.directions.length; i++) {
-      if (player.keys[player.directions[i]]) {
+      if (player.keys[player.directions[i]] === 1) {
         player.directionToMove = player.directions[i];
+          //console.log("Found another dir:", player.directions[i]);
         found = true;
         break;
       }
     }
     if (!found) {
+        //console.log("No direction now");
       player.directionToMove = "";
     }
-  };
+  }.bind(this);
   player.socket.on('keyup', player.keyup);
 };
 
 
 Game.prototype.movePlayer = function(player, gameNum) {
+  //console.log("checking for loop");
   var map = this.maps[gameNum];
   // Check if able to move
 
@@ -171,28 +222,34 @@ Game.prototype.movePlayer = function(player, gameNum) {
   if (!player.moving && player.directionToMove) {
     // Does the space I'm trying to move to exist?
     var destCoords = getDestCoords(player.coords, player.directionToMove);
+    //console.log("Trying to move to:", destCoords.x, ",", destCoords.y);
+    //console.log("y: " + destCoords.y);
     if (destCoords.x >= 0 && 
-        destCoords.x < map.width && 
+        destCoords.x < map.cols && 
         destCoords.y >= 0 && 
-        destCoords.y < map.height) {
+        destCoords.y < map.rows) {
       // Is the space not blocking me?
-      if (!(map.map[destCoords.y][destCoords.x].isBlocking)) {
+        //console.log(map.map[destCoords.y][destCoords.x]);
+        //console.log(map.map[destCoords.y][destCoords.x].isBlocking());
+      if (!(map.map[destCoords.y][destCoords.x].isBlocking())) {
         // If so, start moving there
         player.moving = true;
         // Tell clients to animate me moving there
         var moveData = {
           id: player.id,
-          coords: destCoords
+          coords: destCoords,
+          duration: moveDuration
         }
         this.broadcastToGame(gameNum, 'moveTo', moveData);
         // After moving halfway, check if I can still move there
         setTimeout(function() {
           // Is the space im moving to a door, is it closed now?
-          if (map.map[destCoords.y][destCoords.x].isBlocking) {
+          if (map.map[destCoords.y][destCoords.x].isBlocking()) {
             // Blocked, so move back to my previous space instead
             var moveData = {
               id: player.id,
-              coords: player.coords
+              coords: player.coords,
+              duration: moveDuration / 2
             }
             this.broadcastToGame(gameNum, 'moveTo', moveData);
             // Let me know when done
@@ -206,7 +263,7 @@ Game.prototype.movePlayer = function(player, gameNum) {
             // I'm now actually on the next tile, so handle enter events
             var tile = map.map[destCoords.y][destCoords.x];
             if (tile.onEnter) {
-              this.processEvent(tile.onEnter(), gameNum);
+              this.processEvent(tile.onEnter(player), gameNum);
             }
             // Move the other halfway and yer done!
             setTimeout(function() {
@@ -224,11 +281,13 @@ Game.prototype.processEvent = function(event, gameNum) {
   switch (event.action) {
     case "toggleDoorsOfColor":
       var color = event.data;
-      this.toggleDoorsOfColor(color, gameNum);
+      this.toggleDoorsOfColor(color, 1 - gameNum);
       break;
     case "winGame":
-      var teamNum = event.data;
-      this.endGame(teamNum);
+      console.log("process win p:",event.data.pteam,",w:",event.data.wteam)
+      if (event.data.pteam === event.data.wteam) {
+        this.endGame(event.data.wteam);
+      }
       break;
     default:
       console.log("Invalid event type:", event.action);
@@ -241,9 +300,9 @@ Game.prototype.toggleDoorsOfColor = function(color, gameNum) {
   console.log("DEBUG: toggling", color, "doors");
   for (var i = 0; i < map.doors.length; i++) {
     // If this door is the right color, close it
-    if (door.color === color) {
-      var doorCoords = map.doors[i];
-      var door = map.map[doorCoords.y][doorCoords.x];
+    if (map.doors[i].color === color) {
+      var doorCoords = map.doors[i].coords;
+      var door = map.doors[i];
       door.toggle();
       // Tell clients to animate the door
       var doorData = {
@@ -279,6 +338,7 @@ Game.prototype.toggleDoorsOfColor = function(color, gameNum) {
 
 Game.prototype.endGame = function(teamNum) {
   // Stop taking input, clean up here
+  console.log("endgame, ", this.players.length);
   this.ended = true;
   for (var i = 0; i < this.players.length; i++) {
     var player = this.players[i];
@@ -293,8 +353,16 @@ Game.prototype.endGame = function(teamNum) {
   var loseData = {
     won: 0
   };
-  this.broadcastToTeam(teamNum, 'gameOver', winData);
-  this.broadcastToTeam(1 - teamNum, 'gameOver', loseData);
+  console.log("broadcasting game over event");
+  this.broadcastToTeam(teamNum - 1, 'gameOver', winData);
+  this.broadcastToTeam(1 - (teamNum - 1), 'gameOver', loseData);
+  
+  setTimeout(function() {
+    for (var i = 0; i < this.players.length; i++) {
+      var player = this.players[i];
+      this.lobby.addPlayer(player.id, player);
+    }
+  }.bind(this), gameEndDelay);
 };
 
 
@@ -309,6 +377,7 @@ Game.prototype.broadcastToGame = function(gameNum, event, data) {
 // Send events to all players in a given game
 Game.prototype.broadcastToTeam = function(teamNum, event, data) {
   for (var i = 0; i < this.teams[teamNum].length; i++) {
+    console.log("broad");
     this.teams[teamNum][i].socket.emit(event, data);
   }
 };
