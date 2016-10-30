@@ -135,7 +135,7 @@ Game.prototype.initPlayer = function(player, gameNum) {
   // Setup key listeners
   player.keydown = function(key) {
     //console.log("before  down");
-      console.log(player.keys);
+     // console.log(player.keys);
     if (key["key"] === 119)
     {
         key = 'w';       
@@ -185,7 +185,7 @@ Game.prototype.initPlayer = function(player, gameNum) {
     else if (key["key"] === 100)
     {
         player.keys["d"] = 0;
-        console.log("zeroed d");
+        //console.log("zeroed d");
     }
     else if (key["key"] === 97)
     {
@@ -315,11 +315,12 @@ Game.prototype.toggleDoorsOfColor = function(color, gameNum) {
         var player = this.games[gameNum][j];
         if (player.coords.x == doorCoords.x && player.coords.y == doorCoords.y) {
           // Tell clients to animate the player's death
-          var spawnCoords = map.spawns[player.team - 1];
+          var spawnCoords = map.spawns[player.team - 1][0];
           var playerData = {
             id: player.id,
             spawnCoords: spawnCoords
           };
+          console.log("broadcasting killed");
           this.broadcastToGame(gameNum, 'playerKilled', playerData);
           // Reset player to their spawn point
           player.coords = {
@@ -379,7 +380,7 @@ Game.prototype.broadcastToGame = function(gameNum, event, data) {
 // Send events to all players in a given game
 Game.prototype.broadcastToTeam = function(teamNum, event, data) {
   for (var i = 0; i < this.teams[teamNum].length; i++) {
-    console.log("broad");
+    //console.log("broad");
     this.teams[teamNum][i].socket.emit(event, data);
   }
 };
