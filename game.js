@@ -162,8 +162,9 @@ Game.prototype.initPlayer = function(player, gameNum) {
     player.directionToMove = key;
       
      // console.log("after  down");
-      console.log(player.keys);
-
+     //console.log(player.keys);
+    console.log("down on", key, "game:",gameNum);
+    console.log(player.moving);
     // Try to move
     this.movePlayer(player, gameNum);
   }.bind(this);
@@ -171,7 +172,7 @@ Game.prototype.initPlayer = function(player, gameNum) {
 
   player.keyup = function(key) {
       //console.log("before  up");
-      console.log(player.keys);
+      //console.log(player.keys);
       //console.log("Up on key ", key["key"])
     
     if (key["key"] === 119)
@@ -220,6 +221,7 @@ Game.prototype.movePlayer = function(player, gameNum) {
 
   // Do I have the potential to move and am I trying to?
   if (!player.moving && player.directionToMove) {
+    console.log("moving is possible");
     // Does the space I'm trying to move to exist?
     var destCoords = getDestCoords(player.coords, player.directionToMove);
     //console.log("Trying to move to:", destCoords.x, ",", destCoords.y);
@@ -232,6 +234,7 @@ Game.prototype.movePlayer = function(player, gameNum) {
         //console.log(map.map[destCoords.y][destCoords.x]);
         //console.log(map.map[destCoords.y][destCoords.x].isBlocking());
       if (!(map.map[destCoords.y][destCoords.x].isBlocking())) {
+        console.log("moving is gappening");
         // If so, start moving there
         player.moving = true;
         // Tell clients to animate me moving there
@@ -328,10 +331,11 @@ Game.prototype.toggleDoorsOfColor = function(color, gameNum) {
             y: spawnCoords.y
           };
           // Player can't move for a bit
-          player.moving = true;
+          /*player.moving = true;
           setTimeout(function() {
+            console.log("can move again");
             player.moving = false;
-          }, 500);
+          }, 500);*/
         }
       }
     }
