@@ -315,9 +315,11 @@ Game.prototype.toggleDoorsOfColor = function(color, gameNum) {
         var player = this.games[gameNum][j];
         if (player.coords.x == doorCoords.x && player.coords.y == doorCoords.y) {
           // Tell clients to animate the player's death
+          var spawnCoords = map.spawns[player.team - 1];
           var playerData = {
-            id: player.id
-          }
+            id: player.id,
+            spawnCoords: spawnCoords
+          };
           this.broadcastToGame(gameNum, 'playerKilled', playerData);
           // Reset player to their spawn point
           player.coords = {
